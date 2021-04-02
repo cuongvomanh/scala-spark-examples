@@ -36,7 +36,9 @@ object Main extends App{
 //  charCountry.write.option("header", true).mode("overwrite").parquet(charCountryPath)
 //  spark.read.option("header", true).parquet(charCountryPath).show()
   //Pr2
-  covid.groupBy('continent).agg((count('iso_code), sum('population)))
-
+  val continentDf = covid.groupBy('continent).agg(count('iso_code) as "num_countries", sum('population) as "continent_pop", sum('hospital_beds_per_thousand*'population/1000) as "num_beds")
+  val continentPath = hdfsPath + "/dgd2/sparksql/out/2f/csv/dim"
+  continentDf.write.option("header", true).mode("overwrite").parquet(continentPath)
+  spark.read.option("header", true).parquet(continentPath).show()
 
 }
