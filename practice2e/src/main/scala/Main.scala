@@ -8,32 +8,23 @@ object Main extends App{
   import org.apache.spark.sql.functions._
   //  import spark.sqlContext.implicits._
   // Ex1
-  val readPath = hdfsPath + "/dgd2/sparksql/in/parquet/dim"
-  val schema=StructType(Array(StructField("iso_code", StringType, true),
-    StructField("continent", StringType, true),
-    StructField("location", StringType, true),
-    StructField("population", DoubleType, true),
-    StructField("median_age", DoubleType, true),
-    StructField("gdp_per_capita", DoubleType, true),
-    StructField("hospital_beds_per_thousand", DoubleType, true),
-    StructField("life_expectancy", DoubleType, true)
-  ))
-  val raw = spark.read.schema(schema).parquet(readPath)
-  val covid = raw.filter('iso_code.isNotNull && 'iso_code =!= "OWID_WRL")
-//  covid.show()
+  val countryPath = hdfsPath + "/dgd2/sparksql/in/parquet/dim"
+  val rawCountry = spark.read.parquet(countryPath)
+  val country = rawCountry.filter('iso_code.isNotNull && 'iso_code =!= "OWID_WRL")
+//  country.show()
   //Ex1.1
-  println(covid.count())
+  println(country.count())
   //426
   //Ex1.2
-//  println(covid.select('iso_code).distinct().count())
+//  println(country.select('iso_code).distinct().count())
   //213
   //Ex1.3
-//  covid.select('continent).distinct().show()
-//  covid.where('continent === "Europe").select(min('gdp_per_capita)).show()
-//  covid.where('continent === "Africa").select(max('gdp_per_capita)).show()
+//  country.select('continent).distinct().show()
+//  country.where('continent === "Europe").select(min('gdp_per_capita)).show()
+//  country.where('continent === "Africa").select(max('gdp_per_capita)).show()
   //Ex1.4
-//  covid.select(sum('population)).show()
+//  country.select(sum('population)).show()
   //Ex1.5
-//  covid.select(avg('gdp_per_capita)).show()
+//  country.select(avg('gdp_per_capita)).show()
 
 }

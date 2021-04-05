@@ -9,17 +9,8 @@ object Main extends App{
   val hdfsPath = config.hdfs.hdfs()
   // Ex1
   val readPath = hdfsPath + "/dgd2/sparksql/in/parquet/dim"
-  val schema=StructType(Array(StructField("iso_code", StringType, true),
-    StructField("continent", StringType, true),
-    StructField("location", StringType, true),
-    StructField("population", DoubleType, true),
-    StructField("median_age", DoubleType, true),
-    StructField("gdp_per_capita", DoubleType, true),
-    StructField("hospital_beds_per_thousand", DoubleType, true),
-    StructField("life_expectancy", DoubleType, true)
-  ))
 
-  val df = spark.read.schema(schema).parquet(readPath)
+  val df = spark.read.parquet(readPath)
 //  df.show()
 
   val writePath = hdfsPath + "/dgd2/sparksql/out/2c/csv/dim"
