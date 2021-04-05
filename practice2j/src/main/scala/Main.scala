@@ -19,6 +19,8 @@ object Main extends App{
   val covid = rawCovid.filter('iso_code.isNotNull && 'iso_code =!= "OWID_WRL")
       .withColumn("date", to_date('date, "yyyy-MM-dd"))
   covid.printSchema()
+    country.createOrReplaceTempView("country")
+    covid.createOrReplaceTempView("covid")
 //  covid.show()
   //Ex1.1
 //  val covidAgg = covid.filter('date <= to_timestamp(lit("30/10/2020"), "dd/MM/yyyy")).join(country, "iso_code")
@@ -40,9 +42,7 @@ object Main extends App{
 //  spark.read.parquet(covidAggPath).show()
 
   //Ex1.2
-//  country.createOrReplaceTempView("country")
-//  covid.createOrReplaceTempView("covid")
-////  println(spark.table("country").count())
+//  println(spark.table("country").count())
 //  spark.sql("SELECT location, covid.iso_code, date, total_cases, new_cases, total_deaths, new_deaths, icu_patients, hosp_patients, total_tests, new_tests" +
 //    ", total_cases/population*1000000 as total_cases_per_million" +
 //    ", new_cases/population*1000000 as new_cases_per_million" +
@@ -52,16 +52,28 @@ object Main extends App{
 //    ", new_tests/population*1000 as new_tests_per_thousand" +
 //    ", total_cases/total_tests as positive_rate" +
 //    " from covid join country on covid.iso_code == country.iso_code " +
-//    " where location == 'Vietnam'" +
+////    " where location == 'Vietnam'" +
 //    " order by date desc"
 //  ).show()
   //Ex2
-//  val testRateContinent = covid.filter('date <= to_timestamp(lit("30/10/2020"), "dd/MM/yyyy"))
-//    .join(country, "iso_code").groupBy('continent).agg(sum('new_tests) as "total_test", sum('population) as "continent_population").select('continent, 'total_test, 'total_test/'continent_population as "test_rate")
+  //Ex2.1
+//  val testRateContinent = covid.filter('date < to_date(lit("31/10/2020"), "dd/MM/yyyy"))
+//    .join(country, "iso_code")
+//    .groupBy('continent)
+//    .agg(sum('new_tests) as "total_test", sum('population) as "continent_population")
+//    .select('continent, 'total_test, 'total_test/'continent_population as "test_rate")
+//    .sort('test_rate.desc)
 //  val testRateContinentPath = hdfsPath + "/dgd2/sparksql/out/2j/parquet/test_rate"
 //  testRateContinent.write.mode("overwrite").parquet(testRateContinentPath)
 //  spark.read.parquet(testRateContinentPath).show()
+  //Ex2.2
+//  spark.sql("SELECT continent, sum(new_tests) as total_test, sum(new_tests)/sum(population) as test_rate " +
+//    "from covid join country on covid.iso_code = country.iso_code " +
+//    "where date <= '2020-10-30'" +
+//    "group by continent " +
+//    "order by test_rate desc").show()
   //Ex3
+  //Ex3.1
 //  val deadRateContinent = covid.filter('date <= to_timestamp(lit("30/10/2020"), "dd/MM/yyyy"))
 //    .groupBy('iso_code).agg(sum('new_deaths) as "total_deaths_recal", sum('new_cases) as "total_cases_recal")
 //    .join(country, "iso_code")
@@ -70,14 +82,25 @@ object Main extends App{
 //  val deadRateContinentPath = hdfsPath + "/dgd2/sparksql/out/2j/parquet/top20_deaths"
 //  deadRateContinent.write.mode("overwrite").parquet(deadRateContinentPath)
 //  spark.read.parquet(deadRateContinentPath).show()
+  //Ex3.2
+//  spark.sql("SELECT covid.iso_code, location, sum(new_deaths)/sum(new_cases) as death_rate " +
+//    "from covid join country on covid.iso_code = country.iso_code " +
+//    "where date <= '2020-10-30'" +
+//    "group by covid.iso_code, location " +
+//    "order by death_rate desc").show()
   //Ex4
-  val newCaseByMonth = covid.filter('date >= to_date(lit("2020-01-01"), "yyyy-MM-dd") and 'date < to_date(lit("2020-11-01"), "yyyy-MM-dd"))
-    .groupBy('iso_code, date_format('date, "yyyyMM") as "month")
-    .agg(sum('new_cases) as "total_new_cases")
-    .join(country, "iso_code")
-//    .filter('location === "Vietnam")
-    .select('iso_code, 'location, 'month, 'total_new_cases)
-  val newCaseByMonthPath = hdfsPath + "/dgd2/sparksql/out/2j/csv/new_case_by_month"
-  newCaseByMonth.write.option("header", true).option("sep", "|").mode("overwrite").csv(newCaseByMonthPath)
-  spark.read.option("header", true).option("sep", "|").csv(newCaseByMonthPath).show()
+  //Ex4.1
+//  val newCaseByMonth = covid.filter('date >= to_date(lit("2020-01-01"), "yyyy-MM-dd") and 'date < to_date(lit("2020-11-01"), "yyyy-MM-dd"))
+//    .groupBy('iso_code, date_format('date, "yyyyMM") as "month")
+//    .agg(sum('new_cases) as "total_new_cases")
+//    .join(country, "iso_code")
+////    .filter('location === "Vietnam")
+//    .select('iso_code, 'location, 'month, 'total_new_cases)
+//  val newCaseByMonthPath = hdfsPath + "/dgd2/sparksql/out/2j/csv/new_case_by_month"
+//  newCaseByMonth.write.option("header", true).option("sep", "|").mode("overwrite").csv(newCaseByMonthPath)
+//  spark.read.option("header", true).option("sep", "|").csv(newCaseByMonthPath).show()
+  //Ex4.2
+  spark.sql("SELECT covid.iso_code, location , date_format(date, 'yyyyMM'), sum(new_cases) as total_new_cases " +
+    "from covid join country on covid.iso_code = country.iso_code where date >= '2020-01-01' and date < '2020-10-31' " +
+    "group by covid.iso_code, location, date_format(date, 'yyyyMM')").show()
 }
